@@ -1,16 +1,22 @@
 import jwt
+from django.shortcuts import redirect
 from django.conf import settings
 from django.contrib.sites.shortcuts import get_current_site
 from django.urls import reverse
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 from django.utils.encoding import force_str, smart_bytes, smart_str, DjangoUnicodeDecodeError
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
-from rest_framework import generics, status
+from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
-from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer, PasswordChangeSerializer
+from .serializers import RegisterSerializer, LoginSerializer, PasswordResetSerializer, PasswordChangeSerializer, LogoutSerializer
+from social.serializers import GoogleAuthSerializer
 from .utils import Util
+
+import environ
+env = environ.Env()
+environ.Env.read_env("./expensetracker/.env")
 
 class RegisterView(generics.GenericAPIView):
     serializer_class = RegisterSerializer
@@ -70,14 +76,17 @@ class PasswordResetView(generics.GenericAPIView):
         email = request.data["email"]
 
         if User.objects.filter(email=email).exists():
-            user = User.objects.filter(email=email).first()
+            user = User.objects.get(email=email)
+            if user.provider != "email":
+                return Response({"error": f"You are using {user.provider} authentication, thus cannot reset a password."}, status=status.HTTP_401_UNAUTHORIZED)
             uidb64 = urlsafe_base64_encode(smart_bytes(user.id))
             token = PasswordResetTokenGenerator().make_token(user)
 
             domain = get_current_site(request).domain 
             relative = reverse("token_reset", kwargs={"uidb64": uidb64, "token": token})
-            
-            url = f"http://{domain}{relative}"
+            redirect_url = request.data.get("redirect_url", "")
+
+            url = f"http://{domain}{relative}?redirect_url={redirect_url}"
 
             email_payload = {
                 "body": url,
@@ -90,17 +99,27 @@ class PasswordResetView(generics.GenericAPIView):
 
 class PasswordTokenView(generics.GenericAPIView):
     def get(self, request, uidb64, token):
+        redirect_url = request.GET.get("redirect_url", "")
+
         try:
             id = smart_str(urlsafe_base64_decode(uidb64))
             user = User.objects.get(id=id)
 
             if not PasswordResetTokenGenerator().check_token(user, token):
-                return Response({"error": "Password reset token not valid."})
-
-            return Response({"message": "Token valid.", "uidb64": uidb64, "token": token}, status=status.HTTP_200_OK)
+                try: 
+                    return redirect(f"{redirect_url}?token_valid=False")
+                except:
+                    return redirect(f"{env("FRONTEND_URL")}?token_valid=False")
+            try: 
+                return redirect(f"{redirect_url}?token_valid=True&uidb64={uidb64}&token={token}")
+            except:
+                return redirect(f"{env("FRONTEND_URL")}?token_valid=True&uidb64={uidb64}&token={token}") 
 
         except DjangoUnicodeDecodeError:
-            return Response({"error": "Password reset token not valid."}) 
+            try:
+                return redirect(f"{redirect_url}?token_valid=False")
+            except:
+                return redirect(f"{env("FRONTEND_URL")}?token_valid=False")
 
 class PasswordChangeView(generics.GenericAPIView):
     serializer_class = PasswordChangeSerializer
@@ -110,3 +129,14 @@ class PasswordChangeView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         
         return Response({"message": "Password changed."}, status=status.HTTP_200_OK)
+
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

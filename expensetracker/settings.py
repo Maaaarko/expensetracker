@@ -27,8 +27,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
     'auth',
+    'social',
     'expenses',
 ]
 
@@ -85,7 +87,7 @@ CORS_ORIGIN_WHITELIST = [
 ]
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=10),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
     "REFRESH_TOKEN_LIFETIME": timedelta(hours=12)
 }
 
