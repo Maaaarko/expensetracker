@@ -13,7 +13,7 @@ class GoogleAuthSerializer(serializers.Serializer):
     def validate_auth_token(self, auth_token):
         data = google.Google.validate(auth_token)
         try:
-            user["sub"]
+            data["sub"]
         except:
             raise serializers.ValidationError("Invalid token.")
 

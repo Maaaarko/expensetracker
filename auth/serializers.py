@@ -21,9 +21,6 @@ class RegisterSerializer(serializers.ModelSerializer):
         email = attrs.get("email", "")
         username = attrs.get("username", "")
 
-        if not username.isalnum():
-            raise serializers.ValidationError("Username should be alphanumeric!")
-        
         return attrs
 
     def create(self, validated_data):

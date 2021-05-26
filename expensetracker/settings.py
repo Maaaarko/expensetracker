@@ -17,7 +17,9 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -78,17 +80,21 @@ REST_FRAMEWORK = {
     "NON_FIELD_ERRORS_KEY": "error",
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    "DATE_INPUT_FORMATS": ["%Y-%m-%d"]
 }
 
-#ADD FRONTEND URL HERE
+
+
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:3000",
 ]
 
+
+#CHANGE REFRESH TOKEN TO 12 HOURS
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(hours=12)
+    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=1)
 }
 
 

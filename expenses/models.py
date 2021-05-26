@@ -11,7 +11,7 @@ class Expense(models.Model):
     ]
 
     category = models.CharField(max_length=127, choices=CATEGORIES)
-    amount = models.DecimalField(max_digits=8, decimal_places=2)
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
     note = models.TextField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateField(auto_now_add=True)
+    date = models.DateField()

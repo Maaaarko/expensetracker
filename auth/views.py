@@ -28,10 +28,8 @@ class RegisterView(generics.GenericAPIView):
 
         user = User.objects.get(email=serializer.data["email"])
         token = RefreshToken.for_user(user)
-        domain = get_current_site(request).domain 
-        relative = reverse("verify")
         
-        url = f"http://{domain}{relative}?token={str(token.access_token)}"
+        url = f"{env('FRONTEND_URL')}/verify/?token={str(token.access_token)}"
 
         email_payload = {
             "body": url,
@@ -86,7 +84,7 @@ class PasswordResetView(generics.GenericAPIView):
             relative = reverse("token_reset", kwargs={"uidb64": uidb64, "token": token})
             redirect_url = request.data.get("redirect_url", "")
 
-            url = f"http://{domain}{relative}?redirect_url={redirect_url}"
+            url = f"{env('FRONTEND_URL')}/r?uidb64={uidb64}&token={token}&redirect_url={redirect_url}"
 
             email_payload = {
                 "body": url,
@@ -106,20 +104,18 @@ class PasswordTokenView(generics.GenericAPIView):
             user = User.objects.get(id=id)
 
             if not PasswordResetTokenGenerator().check_token(user, token):
-                try: 
-                    return redirect(f"{redirect_url}?token_valid=False")
-                except:
-                    return redirect(f"{env("FRONTEND_URL")}?token_valid=False")
-            try: 
-                return redirect(f"{redirect_url}?token_valid=True&uidb64={uidb64}&token={token}")
-            except:
-                return redirect(f"{env("FRONTEND_URL")}?token_valid=True&uidb64={uidb64}&token={token}") 
+                return Response({"token_valid": False, "redirect_url": redirect_url}, status=status.HTTP_401_UNAUTHORIZED)
+
+            data = {
+                "token_valid": True,
+                "uidb64": uidb64,
+                "token": token,
+                "redirect_url": redirect_url
+            }
+            return Response(data, status=status.HTTP_200_OK)
 
         except DjangoUnicodeDecodeError:
-            try:
-                return redirect(f"{redirect_url}?token_valid=False")
-            except:
-                return redirect(f"{env("FRONTEND_URL")}?token_valid=False")
+            return Response({"token_valid": False, "redirect_url": redirect_url}, status=status.HTTP_401_UNAUTHORIZED)
 
 class PasswordChangeView(generics.GenericAPIView):
     serializer_class = PasswordChangeSerializer
