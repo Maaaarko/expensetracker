@@ -36,6 +36,14 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     provider = models.CharField(max_length=255, blank=False, null=False, default=AUTH_PROVIDERS.get("email"))
 
+    CURRENCY_CHOICES = [
+        ("USD", "$"),
+        ("GBP", "£"),
+        ("EUR", "€")
+    ]
+
+    currency = models.CharField(max_length=3, default="USD", choices=CURRENCY_CHOICES)
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
     

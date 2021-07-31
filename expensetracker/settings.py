@@ -85,16 +85,14 @@ REST_FRAMEWORK = {
 }
 
 
-
 CORS_ORIGIN_WHITELIST = [
     "http://localhost:3000",
 ]
 
 
-#CHANGE REFRESH TOKEN TO 12 HOURS
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(minutes=1)
+    "REFRESH_TOKEN_LIFETIME": timedelta(hours=12)
 }
 
 
@@ -135,6 +133,8 @@ STATIC_URL = '/static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+#CURRENTLY SETUP FOR GMAIL
 EMAIL_USE_TLS = True
 EMAIL_HOST = "smtp.gmail.com"
 EMAIL_PORT = 587
